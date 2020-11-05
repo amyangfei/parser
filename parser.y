@@ -825,6 +825,7 @@ import (
 	ExplainableStmt        "explainable statement"
 	FlushStmt              "Flush statement"
 	FlashbackTableStmt     "Flashback table statement"
+	FlashbackLogicalStmt   "Flashback table in logical way statement"
 	GrantStmt              "Grant statement"
 	GrantRoleStmt          "Grant role statement"
 	InsertIntoStmt         "INSERT INTO statement"
@@ -2261,10 +2262,10 @@ RecoverTableStmt:
  *
  *******************************************************************/
 FlashbackTableStmt:
-	"FLASHBACK" "TABLE" TableName FlashbackToNewName
+	"FLASHBACK" "TABLE" TableNameList FlashbackToNewName
 	{
 		$$ = &ast.FlashBackTableStmt{
-			Table:   $3.(*ast.TableName),
+			Table:   $3.([]*ast.TableName)[0],
 			NewName: $4,
 		}
 	}
@@ -2276,6 +2277,23 @@ FlashbackToNewName:
 |	"TO" Identifier
 	{
 		$$ = $2
+	}
+
+/*******************************************************************
+ *
+ *  Flush Back Table In Logical Way Statement
+ *
+ *  Example:
+ *      FLASHBACK TABLE t1,t2 TO TIMESTAMP 420621977669599233
+ *
+ *******************************************************************/
+FlashbackLogicalStmt:
+	"FLASHBACK" "TABLE" TableNameList "TO" "TIMESTAMP" LengthNum
+	{
+		$$ = &ast.FlashbackLogicalStmt{
+			Tables:    $3.([]*ast.TableName),
+			Timestamp: $6.(uint64),
+		}
 	}
 
 /*******************************************************************
@@ -9682,6 +9700,7 @@ Statement:
 |	DropBindingStmt
 |	FlushStmt
 |	FlashbackTableStmt
+|	FlashbackLogicalStmt
 |	GrantStmt
 |	GrantRoleStmt
 |	InsertIntoStmt

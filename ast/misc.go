@@ -2629,6 +2629,48 @@ func (n *BRIEStmt) SecureText() string {
 	return sb.String()
 }
 
+// FlashbackLogicalStmt is a statement to restore table data to a timestamp oracle
+type FlashbackLogicalStmt struct {
+	stmtNode
+
+	Tables    []*TableName
+	Timestamp uint64
+}
+
+// Restore implements Node interface.
+func (n *FlashbackLogicalStmt) Restore(ctx *format.RestoreCtx) error {
+	ctx.WriteKeyWord("FLASHBACK TABLE ")
+	for idx, table := range n.Tables {
+		if idx != 0 {
+			ctx.WritePlain(", ")
+		}
+		if err := table.Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while splicing FlashbackLogicalStmt.Table[%d]", idx)
+		}
+	}
+	ctx.WriteKeyWord(" TO TIMESTAMP ")
+	ctx.WritePlainf("%d", n.Timestamp)
+	return nil
+}
+
+// Accept implements Node Accept interface.
+func (n *FlashbackLogicalStmt) Accept(v Visitor) (Node, bool) {
+	newNode, skipChildren := v.Enter(n)
+	if skipChildren {
+		return v.Leave(newNode)
+	}
+
+	n = newNode.(*FlashbackLogicalStmt)
+	for i, val := range n.Tables {
+		node, ok := val.Accept(v)
+		if !ok {
+			return n, false
+		}
+		n.Tables[i] = node.(*TableName)
+	}
+	return v.Leave(n)
+}
+
 // Ident is the table identifier composed of schema name and table name.
 type Ident struct {
 	Schema model.CIStr

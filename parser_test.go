@@ -2800,7 +2800,11 @@ func (s *testParserSuite) TestDDL(c *C) {
 
 		// for flashback table.
 		{"flashback table t", true, "FLASHBACK TABLE `t`"},
+		{"flashback table t,t1", true, "FLASHBACK TABLE `t`"},
 		{"flashback table t TO t1", true, "FLASHBACK TABLE `t` TO `t1`"},
+		// for flashback table to timestamp_oracle.
+		{"flashback table t TO TIMESTAMP 420621977669599233", true, "FLASHBACK TABLE `t` TO TIMESTAMP 420621977669599233"},
+		{"flashback table t1,t2,t3 TO TIMESTAMP 420621977669599233", true, "FLASHBACK TABLE `t1`, `t2`, `t3` TO TIMESTAMP 420621977669599233"},
 
 		// for remove partitioning
 		{"alter table t remove partitioning", true, "ALTER TABLE `t` REMOVE PARTITIONING"},
